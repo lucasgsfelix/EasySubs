@@ -3,13 +3,14 @@
 import os
 import re
 import zipfile
+import magic
 # this program will be responsible to download a subtitle for a movie or tv series through
 # several websites of subtitle
 
 #https://opensubtitles.co/
 #https://www.yifysubtitles.com/
 
-currentPath = "/home/lucasfelix/Área de Trabalho/EasySubtitles/"
+
 
 def discoverTitle(fileName): #this function will be responsible to discover the title of the movie or series
 
@@ -67,6 +68,7 @@ def makeSearch(name, movieFileTitle):
             links = parseIt(data, "/movie-imdb/t")
             break
 
+
     if len(links)==1:
 
         data = readFile(yifi+links[0])
@@ -82,7 +84,8 @@ def makeSearch(name, movieFileTitle):
 
         if zipfile.is_zipfile(movieFileTitle): #if it's a zip file
             fileTreatment(movieFileTitle)
-
+        else: #if it came as a srt file
+            os.system("mv "+movieFileTitle+" "+movieFileTitle+".str")
 
     else:
 
@@ -191,7 +194,7 @@ def downloadAndOpenFile(name): #this function will be responsible for the downlo
 
 
 movieFileTitle = "La.La.Land.2016.DVDScr.XVID.AC3.HQ.Hive-CM8"
-
+currentPath = "/home/lucasfelix/Área de Trabalho/EasySubtitles/"
 name = discoverTitle(movieFileTitle)
 cleanName(name)
 makeSearch(name, movieFileTitle)
