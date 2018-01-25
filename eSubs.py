@@ -2,12 +2,14 @@
 # user/bin/python
 import os
 import re
-
+import zipfile
 # this program will be responsible to download a subtitle for a movie or tv series through
 # several websites of subtitle
 
 #https://opensubtitles.co/
 #https://www.yifysubtitles.com/
+
+currentPath = "/home/lucasfelix/Área de Trabalho/EasySubtitles/"
 
 def discoverTitle(fileName): #this function will be responsible to discover the title of the movie or series
 
@@ -29,7 +31,7 @@ def discoverTitle(fileName): #this function will be responsible to discover the 
 def cleanName(name):
 
     ## the name will probaly have certain tokens that can be disconsidered of the name of the movie like 1080p, brRIp...etc
-    tokens = ["1080p", "BrRip", "x264", "BOKUTOX", "YIFY"]
+    tokens = ["1080p", "BrRip", "x264", "BOKUTOX", "YIFY", "DVDScr", "Hive-CM8", ]
 
     i=0
     while(i<len(name)):
@@ -39,7 +41,7 @@ def cleanName(name):
         i=i+1
 
 
-def makeSearch(name):
+def makeSearch(name, movieFileTitle):
 
     ### this will search in the websites and make the download
 
@@ -67,25 +69,19 @@ def makeSearch(name):
 
     if len(links)==1:
 
-        os.system("wget -O tempFile.html "+ yifi+links[0])
-        texFile = open("tempFile.html", "r")
-        data = texFile.read()
-        texFile.close()
+        data = readFile(yifi+links[0])
         links = parseIt(data, "/subtitles/")
         links = selectLinksByFavoriteLanguage(links, "english")
 
 
-        os.system("wget -O tempFile.html "+ yifi+links[0])
-        texFile = open("tempFile.html", "r")
-        data = texFile.read()
-        texFile.close()
+        data = readFile(yifi+links[0])
         links = parseIt(data, "/subtitle/")
 
-        os.system("wget "+ yifi+links[0])
-
-        os.system("rm tempFile.html")
+        os.system("wget -O "+movieFileTitle+" "+yifi+links[0])
 
 
+        if zipfile.is_zipfile(movieFileTitle): #if it's a zip file
+            fileTreatment(movieFileTitle)
 
 
     else:
@@ -93,6 +89,25 @@ def makeSearch(name):
         print " We don't discovered your movie title, can you type it, please ? "
         print " Is one of this your movie ?"
 
+def fileTreatment(movieFileTitle):
+
+    subtitle = zipfile.ZipFile(movieFileTitle)
+    filesInZip = subtitle.namelist()
+    subFile = srtFiles(filesInZip)
+    subtitle.extract(subFile[0]) #here I have extract all files in the zip
+    os.system("rm "+ movieFileTitle) ## remove the zip file
+    os.system("mv "+subFile[0]+" "+movieFileTitle+".srt") #rename the sub file
+    os.system("rm tempFile.html") #remove the temporary file
+
+def srtFiles(filesInZip): # show the subtitle files in the zip
+
+    subFile = []
+    for i in filesInZip:
+        j = len(i) - 1
+        if i[j] == "t" and i[j-1] == "r" and i[j-2] == "s" and i[j-3] == ".":
+            subFile.append(i)
+
+    return subFile
 
 def selectLinksByFavoriteLanguage(links, favoriteLanguage):
 
@@ -107,6 +122,12 @@ def selectLinksByFavoriteLanguage(links, favoriteLanguage):
     return links
 
 
+def readFile(name):
+    os.system("wget -O tempFile.html "+ name)
+    texFile = open("tempFile.html", "r")
+    redableData = texFile.read()
+    texFile.close()
+    return redableData
 
 def parseIt(data, search):
 
@@ -144,10 +165,7 @@ def removeRepeteadElements(links):
 
 def downloadAndOpenFile(name): #this function will be responsible for the download of the page and open the file
 
-    os.system("wget -O tempFile.html "+ name)
-    texFile = open("tempFile.html", "r")
-    redableData = texFile.read()
-    texFile.close()
+    redableData = readFile(name)
     noDiscover = ["no results", "No data record"]
 
     os.system("rm tempFile.html")
@@ -172,6 +190,8 @@ def downloadAndOpenFile(name): #this function will be responsible for the downlo
     }'''
 
 
-name = discoverTitle("La.La.Land.2016.DVDScr.XVID.AC3.HQ.Hive-CM8")
+movieFileTitle = "La.La.Land.2016.DVDScr.XVID.AC3.HQ.Hive-CM8"
+
+name = discoverTitle(movieFileTitle)
 cleanName(name)
-makeSearch(name)
+makeSearch(name, movieFileTitle)
