@@ -14,7 +14,7 @@ import magic
 
 def discoverTitle(fileName): #this function will be responsible to discover the title of the movie or series
 
-    separators = [",", ".", "_", "-"]
+    separators = [",", ".", "_", "-", " "]
     name = []
 
     ## can be case sensitive too
@@ -50,8 +50,8 @@ def makeSearch(name, movieFileTitle):
     yifi = "https://www.yifysubtitles.com"
     openSubsSearch = "https://opensubtitles.co/search?q="
     k = len(name)-1
-
-    while(k>0):
+    links = []
+    while(k>=0):
         # in the end I have to have one link
         i=0
         aux = yifiSearch
@@ -87,10 +87,37 @@ def makeSearch(name, movieFileTitle):
         else: #if it came as a srt file
             os.system("mv "+movieFileTitle+" "+movieFileTitle+".str")
 
-    else:
+    elif len(links)>0:
 
         print " We don't discovered your movie title, can you type it, please ? "
         print " Is one of this your movie ?"
+
+        movieName = moviesNames(data, '<h3 class="media-heading" itemprop="name">')
+
+        print ''.join(movieName)
+
+    else:
+
+        print "The movie that you search are not in our data base, sorry :/"
+
+def moviesNames(data, search):
+
+    r = [(a.end()) for a in list(re.finditer(search, data))]
+    i=0
+    movieName = []
+    while(i<len(r)):
+        p = r[i]
+
+        while(data[p]!='<'):
+            movieName.append(data[p])
+            p=p+1
+        movieName.append('\n')
+        i=i+1
+
+    return movieName
+
+
+
 
 def fileTreatment(movieFileTitle):
 
@@ -135,7 +162,6 @@ def readFile(name):
 def parseIt(data, search):
 
     r = [(a.start()) for a in list(re.finditer(search, data))]
-
     i=0
     links = []
     while(i<len(r)):
@@ -193,7 +219,7 @@ def downloadAndOpenFile(name): #this function will be responsible for the downlo
     }'''
 
 
-movieFileTitle = "La.La.Land.2016.DVDScr.XVID.AC3.HQ.Hive-CM8"
+movieFileTitle = "Thor.Ragnarok.2017.1080p.BluRay.x264"
 currentPath = "/home/lucasfelix/Área de Trabalho/EasySubtitles/"
 name = discoverTitle(movieFileTitle)
 cleanName(name)
