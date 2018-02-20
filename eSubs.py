@@ -12,27 +12,48 @@ import magic
 
 
 
-def discoverTitle(fileName): #this function will be responsible to discover the title of the movie or series
+def discoverTitle(fileName, specifiedSeparator): #this function will be responsible to discover the title of the movie or series
 
     separators = [",", ".", "_", "-", " "]
     name = []
 
-    ## can be case sensitive too
-    for i in fileName:
+    if specifiedSeparator != ' ':
+        separators = []
+        separators.append(specifiedSeparator)
 
-        if all ( i != k for k in separators ) :
-            name.append(i)
+        fileName = list(fileName)
 
-        else: #this way we have the tokens properly separated
-            name.append('\t')
+        i=0
 
-    return ''.join(name).split('\t')
+        while(i<len(fileName)):
+
+            if fileName[i] == specifiedSeparator:
+
+                fileName.pop(i)
+                i=i-1
+
+            i=i+1
+
+        return ''.join(fileName)
+
+
+    else:
+        ## can be case sensitive too
+        for i in fileName:
+
+            if all ( i != k for k in separators ) :
+                name.append(i)
+
+            else: #this way we have the tokens properly separated
+                name.append('\t')
+
+        return ''.join(name).split('\t')
 
 
 def cleanName(name):
 
     ## the name will probaly have certain tokens that can be disconsidered of the name of the movie like 1080p, brRIp...etc
-    tokens = ["1080p", "BrRip", "x264", "BOKUTOX", "YIFY", "DVDScr", "Hive-CM8", ]
+    tokens = ["1080p", "BrRip", "x264", "BOKUTOX", "YIFY", "DVDScr", "Hive-CM8", "720p" ]
 
     i=0
     while(i<len(name)):
@@ -73,7 +94,10 @@ def makeSearch(name, movieFileTitle):
 
         data = readFile(yifi+links[0])
         links = parseIt(data, "/subtitles/")
-        links = selectLinksByFavoriteLanguage(links, "english")
+
+        subsNames=findNameOfSubs(data)
+
+        links = selectLinksByFavoriteLanguage(links, "english", subsNames)
 
 
         data = readFile(yifi+links[0])
@@ -99,6 +123,39 @@ def makeSearch(name, movieFileTitle):
     else:
 
         print "The movie that you search are not in our data base, sorry :/"
+
+def originalCaption(title, link, subsNames):
+
+    print title, subsNames
+    exit()
+
+    if title == subsNames :
+
+        print "We may have found the perfect subtitle for you !"
+
+        ### now I have to download this sub
+        return True
+
+
+    return False
+
+
+
+def findNameOfSubs(data):
+
+    r = [(a.end()) for a in list(re.finditer("</span>", data))]
+    names  = []
+    for i in r:
+        p = i+1
+        if data[p] != "<":
+            p=p-1
+            while data[p] != '<':
+                names.append(data[p])
+                p=p+1
+                if data[p] == '<':
+                    names.append('\n')
+
+    return ''.join(names).split('\n')
 
 def moviesNames(data, search):
 
@@ -139,7 +196,19 @@ def srtFiles(filesInZip): # show the subtitle files in the zip
 
     return subFile
 
-def selectLinksByFavoriteLanguage(links, favoriteLanguage):
+def selectLinksByFavoriteLanguage(links, favoriteLanguage, subsNames):
+
+    i=0
+    ############ will remove the repetead subs
+    aux = []
+    while i < len(links):
+        if i %2 != 0:
+            aux.append(links[i])
+        i=i+1
+    links = aux
+
+    if subsNames[len(subsNames)-1] == '':
+        subsNames.pop(len(subsNames)-1)
 
     i=0
     while i<len(links):
@@ -147,7 +216,15 @@ def selectLinksByFavoriteLanguage(links, favoriteLanguage):
         if len(r)==0:
             links.pop(i)
             i=i-1
+        else:
+            perfectSub = originalCaption(movieFileTitle, links[i], subsNames[i])
+
+            if perfectSub == True:
+
+                return links[i]
+
         i=i+1
+
 
     return links
 
@@ -219,8 +296,8 @@ def downloadAndOpenFile(name): #this function will be responsible for the downlo
     }'''
 
 
-movieFileTitle = "Thor.Ragnarok.2017.1080p.BluRay.x264"
+movieFileTitle = "La.La.Land.2016.DVDScr.XVID.AC3.HQ.Hive-CM8"
 currentPath = "/home/lucasfelix/Área de Trabalho/EasySubtitles/"
-name = discoverTitle(movieFileTitle)
+name = discoverTitle(movieFileTitle, ' ')
 cleanName(name)
 makeSearch(name, movieFileTitle)
